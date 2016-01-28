@@ -51,7 +51,7 @@ function randomInput()
 	end;
 end;
 
-function resetInput()
+function resetInput() --The joypad needs to be reset before I add a new input
 	joyr = joypad.read(1);
 	joyr['left'] = false;
 	joyr['right'] = false;
@@ -59,22 +59,22 @@ function resetInput()
 	return joyr
 end;
 	
-function fitnessL()
+function fitnessL() --My fitness function, the distance from the starting point of the current map
 	marioxpos = memory.readbyte(0x6D) * 0x100 + memory.readbyte(0x86);
 	return marioxpos;
 end;
 
-function loadSS()
+function loadSS() --loads the save state that is made when the script is first called
 	savestate.load(startState);
 	currDis = 0;
 	maxDis = 0;
 	timer = 0;
 end;
 
-function breed()
+function breed() --my breed function cross breeds the current move sets and also does some random mutation
 	maxFit = 0;
 	leng = table.getn(a1);
-	for m = 1, (leng-1) do
+	for m = 1, (leng-1) do --find the max fitness and prints it just so I can see how it is doing
 		if(a1[m]["fitness"] > maxFit) then
 			maxFit = a1[m]["fitness"];
 		end;
@@ -89,7 +89,7 @@ function breed()
 	for x = 1, ((leng-1)/2) do
 		fitnessSumtmp = fitnessSum;
 		crossOver = math.random(10);
-		if (crossOver <= 7) then
+		if (crossOver <= 7) then --routlette wheel coosing which two parents to breed
 			wheel = math.random(fitnessSum);
 			for q = 1, (leng-1) do
 				if(wheel > (fitnessSumtmp - a1[q]["fitness"])) then
@@ -112,14 +112,14 @@ function breed()
 			leng2 = table.getn(a1[h]);
 			crossOverSpot = 0;
 			length = 0;
-			if (leng1 > leng2) then
+			if (leng1 > leng2) then --find a random cross over spot from 1 to length of shortest list
 				crossOverSpot = math.random(leng2);
 				length = leng1;
 			else
 				crossOverSpot = math.random(leng1);
 				length = leng2;
 			end;
-			for l = 0, length do
+			for l = 0, length do -- do the crossover
 				if(l < crossOverSpot) then
 					a1[x][l] = a1[g][l];
 					a1[leng-1][l] = a1[h][l];
@@ -141,7 +141,7 @@ function breed()
 	end
 end;
 
-function findNextMove(x, y)
+function findNextMove(x, y) 
 	if(a1[x] and a1[x][y] ~= nil) then
 		return a1[x][y]
 	else
@@ -164,30 +164,30 @@ while (true) do
 	move = findNextMove(i, j);
 	joypad.set(1, move);
 	currDis = fitnessL();
-	if(currDis > maxDis) then
+	if(currDis > maxDis) then --find the current distance, if we are making progress set the reset timer to 0
 		maxDis = currDis;
 		timer = 0;
 	else
 		timer = timer + 1;
 	end;
-	if(timer >= 120) then
-		if(a1[i][j+1] ~= nil) then
+	if(timer >= 120) then --if we haven't moved for 120 frames (2 sec)
+		if(a1[i][j+1] ~= nil) then --this is incase of de-evlolution it removes the extra unnessesary moves
 			endl = table.getn(a1[i]);
 			for o = (j+1), (endl-1) do
 				a1[i][o] = nil;
 			end
 		end;
 		j = 1;
-		if(i >= 21) then
+		if(i >= 21) then --if we have gone through the entire list of lists of moves then breed
 			i = 1;
 			--print "Breed Time"
 			breed();
-		else
+		else --find the fitness of the current run and save it, then move onto the next list of moves
 			a1[i]["fitness"] = maxDis;
 			i = i + 1;
 		end;
-		loadSS();
+		loadSS(); --load the save state and start the next run
 	end;
-	j = j + 1;
-	FCEU.frameadvance();
+	j = j + 1; --keeps track of location in current list of moves
+	FCEU.frameadvance(); --advance the frame
 end;
